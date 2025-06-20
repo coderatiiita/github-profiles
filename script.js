@@ -9,6 +9,7 @@ async function getUser(username) {
         const { data } = await axios.get(APIURL + username);
         createUserCard(data, username);
         getRepos(username);
+        getEvents(username);
     } catch(err) {
         if(err.response.status === 404) {
             createErrorCard('No profile with this username');
@@ -22,6 +23,15 @@ async function getRepos(username) {
         addReposToCard(data);
     } catch(err) {
         createErrorCard('Problem fetching repos');
+    }
+}
+
+async function getEvents(username) {
+    try {
+        const { data } = await axios.get(APIURL + username + '/events');
+        addEventsToCard(data);
+    } catch(err) {
+        showEventError('Problem fetching activity');
     }
 }
 
@@ -44,6 +54,7 @@ function createUserCard(user, username) {
             </ul>
 
             <div id="repos"></div>
+            <div id="events" class="events"></div>
         </div>
     </div>`;
     main.innerHTML = cardHTML;
@@ -68,9 +79,30 @@ function addReposToCard(repos) {
             repoEl.href = repo.html_url;
             repoEl.target = '_blank';
             repoEl.innerText = repo.name;
-            
+
             reposEl.appendChild(repoEl);
-        }); 
+        });
+}
+
+function addEventsToCard(events) {
+    const eventsEl = document.getElementById('events');
+    if (!events.length) {
+        eventsEl.innerHTML = '<p>No recent public activity</p>';
+        return;
+    }
+
+    const list = document.createElement('ul');
+    events.slice(0, 5).forEach(ev => {
+        const item = document.createElement('li');
+        item.innerText = `${ev.type} - ${ev.repo.name}`;
+        list.appendChild(item);
+    });
+    eventsEl.appendChild(list);
+}
+
+function showEventError(msg) {
+    const eventsEl = document.getElementById('events');
+    eventsEl.innerHTML = `<p>${msg}</p>`;
 }
 
 form.addEventListener('submit', (e) => {
